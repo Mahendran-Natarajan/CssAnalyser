@@ -25,11 +25,11 @@ public class Css {
 		elementMap = new HashMap<String, HashMap<String, String>>();
 		try {
 			overrideFile = new PrintWriter(new BufferedWriter(new FileWriter(
-					cssFileName+"_override.css", true)));
+					cssFileName + "_override.css", false)));
 			differenceFile = new PrintWriter(new BufferedWriter(new FileWriter(
-					cssFileName+"_difference.css", true)));
+					cssFileName + "_difference.css", false)));
 			duplicateFile = new PrintWriter(new BufferedWriter(new FileWriter(
-					cssFileName+"_duplicate.css", true)));
+					cssFileName + "_duplicate.css", false)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -37,9 +37,11 @@ public class Css {
 	}
 
 	public static void main(String[] args) throws Exception {
-		String cssFileName = "css1.css";
-		Css css = new Css(cssFileName);
-		css.readCssFile(cssFileName);
+		String cssFileLocation = "css1.css";
+		File file = new File(cssFileLocation);
+		String fileName = file.getName();
+		Css css = new Css(fileName.substring(0, fileName.indexOf(".")));
+		css.readCssFile(file);
 	}
 
 	private void readElementProperties(String masterKey, String line,
@@ -49,18 +51,14 @@ public class Css {
 			masterValue = line.substring(openBrace, line.length());
 			masterValue = masterValue.substring(masterValue.indexOf("{") + 1,
 					masterValue.indexOf("}"));
-			// System.out.println("Master value:" + masterValue);
 		}
 	}
 
-	private void readCssFile(String cssFileName) throws FileNotFoundException, IOException {
-		File file = new File(cssFileName);
-		// file = new File("css2.css");
-		// System.out.println(file.getCanonicalPath());
+	private void readCssFile(final File file) throws FileNotFoundException,
+			IOException {
 		fileReader = new FileReader(file.getCanonicalPath());
 		br = new BufferedReader(fileReader);
 		String line;
-		// String masterValue = null;
 		String masterKey = null;
 		boolean bMasterKey = false;
 		boolean bDifference = false;
@@ -73,7 +71,7 @@ public class Css {
 			line = line.trim();
 			if (line.startsWith("/*"))
 				continue;
-			// System.out.println(line);
+			//System.out.println("LINE :"  + line);
 			int openBrace = line.indexOf("{");
 			if (openBrace != -1) { // if open brace found means with element
 				masterKey = line.substring(0, openBrace);
@@ -92,17 +90,17 @@ public class Css {
 						bMasterKey = false;
 					}
 				}
-				// System.out.println("Master Key : " + masterKey);
+				System.out.println("Master Key :" + masterKey);
 			} else {
 				int closeBrace = line.indexOf("}");
 				if (closeBrace == -1) {
 					// open brace is not found
 					String[] properties = line.split(";");
-					// System.out.println(line);
+				//	System.out.println(line);
 					if (properties.length == 1) { // only one property value per
 													// line
 						String[] keyValue = properties[0].split(":");
-
+						//if(keyValue!=null && keyValue.length >0)
 						if (elementPropertyMap.containsKey(keyValue[0])) {
 							String tmpValue = elementPropertyMap
 									.get(keyValue[0]);
@@ -113,17 +111,14 @@ public class Css {
 								}
 								// if both values are not equal then add it into
 								// override.css
-								// System.out.println("Override :> Element :"+
-								// masterKey + "{" + keyValue[0] + ":" +
-								// keyValue[1] +"}");
-								overrideFile.println(keyValue[0] + ": "
+								overrideFile.println("\t" + keyValue[0] + ": "
 										+ keyValue[1] + ";");
 							} else {
 								if (!bDuplicate) {
 									bDuplicate = true;
 									duplicateFile.println(masterKey + "{");
 								}
-								duplicateFile.println(keyValue[0] + ": "
+								duplicateFile.println("\t" + keyValue[0] + ": "
 										+ keyValue[1] + ";");
 							}
 						} else if (bMasterKey) {
@@ -134,7 +129,7 @@ public class Css {
 								bDifference = true;
 								differenceFile.println(masterKey + "{");
 							}
-							differenceFile.println(keyValue[0] + ": "
+							differenceFile.println("\t" + keyValue[0] + ": "
 									+ keyValue[1] + ";");
 						} else {
 							// if key is not present already then simply add it
@@ -146,19 +141,22 @@ public class Css {
 					elementMap.put(masterKey, elementPropertyMap);
 					if (bDifference) {
 						differenceFile.println("}");
+						differenceFile.println();
 						bDifference = false;
 					}
 
 					if (bDuplicate) {
 						duplicateFile.println("}");
+						duplicateFile.println();
 						bDuplicate = false;
 					}
 
 					if (bOverride) {
 						overrideFile.println("}");
+						overrideFile.println();
 						bOverride = false;
 					}
-
+					//System.out.println("Master Key :" + masterKey);
 				}
 			}
 		}
